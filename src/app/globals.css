@@ -1,0 +1,181 @@
+@import "tailwindcss";
+
+/* ───────────────────────── Design tokens: "Black Glass" ─────────────────────────
+   One near-black base, light layered on top in white-alpha steps, one olive accent (from the product name).
+   Text colors are checked for WCAG AA against --color-bg (lowest pair is 5.1:1). */
+@theme {
+  /* base + text */
+  --color-bg: #0a0a0b;
+  --color-ink: #eceae6;      /* primary text, warm off-white (16.5:1) */
+  --color-ink-2: #a8a7a2;    /* secondary text (8.2:1) */
+  --color-ink-3: #8b8a85;    /* muted labels (5.7:1) */
+  --color-accent: #aeb27a;   /* dusty olive (8.9:1): focus, selection, send, links, the olive mark */
+  --color-on-accent: #0a0a0b;
+  --color-danger: #e8968c;   /* soft red, still AA on bg */
+
+  /* glass levels (white over near-black) */
+  --color-glass-1: rgb(255 255 255 / 0.025); /* sidebar */
+  --color-glass-2: rgb(255 255 255 / 0.045); /* composer, user bubble */
+  --color-glass-3: rgb(255 255 255 / 0.07);  /* hover */
+  --color-glass-4: rgb(255 255 255 / 0.1);   /* active / pressed */
+  --color-code: #0e0e10;
+
+  /* hairlines */
+  --color-line: rgb(255 255 255 / 0.07);
+  --color-line-strong: rgb(255 255 255 / 0.13);
+
+  /* radii by role, not one size for everything */
+  --radius-ctl: 8px;       /* icon buttons */
+  --radius-row: 10px;      /* list rows, code blocks */
+  --radius-card: 16px;     /* login card */
+  --radius-bubble: 18px;   /* user message */
+  --radius-composer: 22px; /* composer */
+
+  /* type */
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-display: var(--font-instrument), Georgia, serif;
+
+  /* motion */
+  --ease-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-rise: rise 420ms var(--ease-soft) both;
+  --animate-fade: fade 240ms var(--ease-soft) both;
+  --animate-breathe: breathe 1.8s ease-in-out infinite; /* only on the live "thinking" dot */
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(6px); }
+  }
+  @keyframes fade {
+    from { opacity: 0; }
+  }
+  @keyframes breathe {
+    50% { opacity: 0.35; }
+  }
+  @keyframes sweep {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(300%); }
+  }
+}
+
+/* Glass panel: low fill, hairline border, light catching the top edge. */
+@utility glass {
+  background: var(--color-glass-2);
+  border: 1px solid var(--color-line);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.07), 0 12px 32px -16px rgb(0 0 0 / 0.7);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  @media (width < 48rem) {
+    /* cheaper blur on phones */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+}
+
+/* Just the top-edge highlight, for surfaces that aren't full glass. */
+@utility edge {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06);
+}
+
+/* Small quiet labels (group headings, form labels, status): sentence case, muted, no tracking games. */
+@utility label {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 500;
+  color: var(--color-ink-3);
+}
+
+/* Light sweep for "thinking" + loading rows: a short highlight moving across a hairline. */
+@utility sweep {
+  position: relative;
+  overflow: hidden;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    width: 40%;
+    background: linear-gradient(90deg, transparent, var(--sweep, rgb(255 255 255 / 0.06)), transparent);
+    animation: sweep 1.6s var(--ease-soft) infinite;
+  }
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/* Film grain: static SVG noise over everything, never animated, never catches clicks. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+::selection {
+  background: rgb(174 178 122 / 0.3);
+}
+
+/* One focus ring everywhere: olive with a little air. Text fields are skipped because each one shows
+   focus itself (composer glow, input border + glow); Tailwind emits this rule unlayered, so utilities can't undo it. */
+:focus-visible:not(textarea, input) {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Thin, quiet scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 0.12) transparent;
+}
+
+/* ───────────────────────── Markdown answers ───────────────────────── */
+.md { line-height: 1.75; overflow-wrap: anywhere; color: var(--color-ink); }
+.md > * + * { margin-top: 0.9em; }
+.md h1, .md h2, .md h3 { font-weight: 600; line-height: 1.3; letter-spacing: -0.01em; margin-top: 1.5em; }
+.md h1 { font-size: 1.4em; } .md h2 { font-size: 1.2em; } .md h3 { font-size: 1.05em; }
+.md strong { font-weight: 600; color: #f5f4f1; }
+.md ul { list-style: disc; padding-left: 1.4em; }
+.md ol { list-style: decimal; padding-left: 1.4em; }
+.md li + li { margin-top: 0.3em; }
+.md li::marker { color: var(--color-ink-3); }
+.md a { color: var(--color-accent); text-decoration: underline; text-decoration-color: rgb(174 178 122 / 0.4); text-underline-offset: 3px; transition: text-decoration-color 160ms; }
+.md a:hover { text-decoration-color: currentColor; }
+.md blockquote { border-left: 2px solid var(--color-line-strong); padding-left: 1em; color: var(--color-ink-2); }
+.md hr { border-color: var(--color-line); }
+.md :not(pre) > code { font-family: var(--font-mono); font-size: 0.86em; background: var(--color-glass-3); border: 1px solid var(--color-line); padding: 0.08em 0.38em; border-radius: 5px; }
+.md .code-block { background: var(--color-code); border: 1px solid var(--color-line); border-radius: var(--radius-row); overflow: hidden; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04); }
+.md pre { font-family: var(--font-mono); font-size: 0.85em; line-height: 1.65; color: #d9d7d2; padding: 0.9em 1.1em 1.1em; overflow-x: auto; }
+.md pre code.hljs { padding: 0; background: transparent; }
+.md table { display: block; overflow-x: auto; border-collapse: collapse; font-size: 0.925em; }
+.md th, .md td { border: 1px solid var(--color-line); padding: 0.45em 0.8em; text-align: left; }
+.md th { background: var(--color-glass-1); font-weight: 600; }
+
+/* Syntax colors: stone + silver + one muted sand, so code reads calm, not rainbow. All AA on --color-code. */
+.hljs-comment, .hljs-quote { color: #85847e; font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-built_in, .hljs-type { color: #aebccb; }
+.hljs-string, .hljs-regexp, .hljs-template-tag, .hljs-addition { color: #d8c8a6; }
+.hljs-number, .hljs-symbol, .hljs-bullet, .hljs-variable.language_ { color: #c9b3a8; }
+.hljs-title, .hljs-title.function_, .hljs-title.class_, .hljs-section { color: #f0eee9; }
+.hljs-attr, .hljs-attribute, .hljs-property, .hljs-params, .hljs-variable, .hljs-name, .hljs-selector-class { color: #c2c0b9; }
+.hljs-meta, .hljs-tag, .hljs-punctuation { color: #9a9993; }
+.hljs-deletion { color: var(--color-danger); }
+.hljs-emphasis { font-style: italic; }
+.hljs-strong { font-weight: 600; }
+
+/* ───────────────────────── Reduced motion ───────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
