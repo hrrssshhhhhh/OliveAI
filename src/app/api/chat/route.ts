@@ -10,7 +10,9 @@ import { checkLimits } from "@/lib/limits";
 
 // reads GROQ_API_KEY (server only, never NEXT_PUBLIC_).
 // The SDK retries 408/409/429/5xx and timeouts with backoff; retries only happen before the stream starts.
-const groq = new Groq({ maxRetries: 3, timeout: 60_000 });
+// created on first use: `next build` imports this route and must not need GROQ_API_KEY to do that
+let groqClient: Groq | undefined;
+const groq = () => (groqClient ??= new Groq({ maxRetries: 3, timeout: 60_000 }));
 const SYSTEM = `You are a helpful, knowledgeable AI assistant. Answer clearly and accurately.
 - Match length to the question: short for simple questions, thorough for complex ones.
 - Use Markdown when it helps: headings, lists, tables, and fenced code blocks with a language tag.
@@ -72,7 +74,7 @@ export async function POST(req: Request) {
       // function alive for them on Vercel (it may freeze once the response ends).
       done = (async () => {
         try {
-          const stream = await groq.chat.completions.create(
+          const stream = await groq().chat.completions.create(
             {
               model,
               max_tokens: 8000, // cost cap per reply (room for long code answers); history is capped by MAX_HISTORY
@@ -132,7 +134,7 @@ export async function POST(req: Request) {
 // Small, cheap call: 4-word title from the first question. Failure just keeps "New chat".
 async function makeTitle(convId: string, question: string) {
   try {
-    const res = await groq.chat.completions.create({
+    const res = await groq().chat.completions.create({
       model: "openai/gpt-oss-20b",
       max_tokens: 200, // reasoning model: thinking tokens count against this, 30 came back empty
       reasoning_effort: "low",
